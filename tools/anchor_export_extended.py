@@ -2,6 +2,8 @@ import hydrus_api
 from pathlib import Path
 import json
 from loguru import logger
+from itertools import product
+from collections import defaultdict
 
 ANCHOR_TO_IMPORT_ALIAS = {"kemonoparty": "kemono.party"}
 
@@ -28,8 +30,10 @@ def run(
 	deleted_file_service_key = file_service_key if deleted else {}
 	# logger.debug(deleted_file_service_key)
 
-	test = "system:hash is 15a51d2a65b5b554e6a8fdc8be9301eec04a73a40e84ed11e5f4e569fc905030"
 	search = [r"system:has url matching regex https://kemono.su"]
+	# search = [
+	# 	r"system:hash is 77c8f33f9acb7acddf54b00e4ce8d6e57058b87dcb1751498800a792bfa11819"
+	# ]  # test
 	file_ids = client.search_files(
 		[search],
 		file_service_keys=file_service_key,
@@ -64,10 +68,12 @@ def run(
 	metadatas = client.get_file_metadata(file_ids=file_ids)["metadata"]
 	import_prefix = ANCHOR_TO_IMPORT_ALIAS[anchor_name]
 	for metadata in metadatas:
-		data: dict = {}
-		data["hash"] = metadata["hash"]
+		basket: defaultdict = defaultdict(list)
+		basket["hash"].append(("hash", metadata["hash"]))
 
 		# TODO: look at deleted tags as fallback
+		# TODO: handle cases multiple namespaces of the same name
+		# e.g. file was found on another post id (or user wtf)
 		tags = metadata["tags"][tags_service_key]["storage_tags"]["0"]
 		# logger.debug("tags={}", tags)
 
@@ -80,24 +86,41 @@ def run(
 			# logger.debug("{} | {}", namespace, value)
 
 			if namespace == f"{import_prefix} id":
-				data["id"] = value
+				basket["id"].append(("id", value))
 			elif namespace == f"{import_prefix} service":
-				data["service"] = value
+				basket["service"].append(("service", value))
 			elif namespace == f"{import_prefix} user id":
-				data["user"] = value
+				basket["user"].append(("user", value))
 
-		# logger.debug("data=", data)
+		# logger.debug("basket={}", basket)
+
+		# create cartesian product of data and finalize formatting structure
+		cartesian_tags = product(*basket.values())
+		# logger.debug("combination_tags={}", cartesian_tags)
+
+		anchors_to_compile: list = []  # list of anchors to create
+		for cartesian_tag in cartesian_tags:
+			d: dict = {}
+			for tag in cartesian_tag:
+				# logger.debug("tag={}", tag)
+				namespace, value = tag
+				d[namespace] = value
+			anchors_to_compile.append(d)
+
+		# logger.debug("anchors_to_compile={}", anchors_to_compile)
 		try:
-			anchor = anchor_name + archive_format.format(**data)
-			anchors.append(anchor)
+			for anchor_to_compile in anchors_to_compile:
+				# logger.debug("anchor_to_compile={}", anchor_to_compile)
+				anchor = anchor_name + archive_format.format(**anchor_to_compile)
+				anchors.append(anchor)
 		except KeyError as err:
-			md5 = data["hash"]
-			msg = f"key {err.args[0]} not found for hash {md5}"
+			md5 = basket["hash"][0][1]
+			msg = f'archive placeholder "{err.args[0]}" not found for hash {md5}'
 			logger.warning(msg)
 			failed_anchors.append(md5)
 
 	# prepare query
-	anchors_str = "".join(f"\n\t('{a}')," for a in anchors)
+	anchors_str = ",\n\t".join(f"('{a}')" for a in anchors)
 	anchor_query_pth = Path("./anchor_query.tmp")
 	with anchor_query_pth.open("w") as fp:
 		fp.write(f"insert or ignore into archive (entry) values{anchors_str};")

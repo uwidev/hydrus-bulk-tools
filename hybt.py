@@ -1,3 +1,5 @@
+#!/bin/env python
+
 from typing import Optional
 import tools
 import typer
@@ -10,7 +12,7 @@ with open(config_pth, "rb") as fp:
 	config: dict = tomllib.load(fp)
 
 
-@app.command()
+@app.command(help="Attempt to create anchors for unknown urls using tags")
 def anchor_export(
 	anchor_name: str,
 	service_name: Optional[str] = "all local files",
