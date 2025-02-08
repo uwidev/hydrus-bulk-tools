@@ -12,10 +12,11 @@ ANCHOR_TO_IMPORT_ALIAS = {"kemonoparty": "kemono.party"}
 def run(
 	config: dict,
 	anchor_name: str,
+	hydrus_query: str,
 	file_service_name: str = "all local files",
 	tag_service_name: str = "all known tags",
 	*,
-	deleted: bool = True,
+	search_deleted: bool = True,
 ):
 	conf_hydrus = config["hydrus"]
 	key = conf_hydrus["key"]
@@ -27,10 +28,11 @@ def run(
 	}
 	# logger.debug(file_service_key)
 
-	deleted_file_service_key = file_service_key if deleted else {}
+	deleted_file_service_key = file_service_key if search_deleted else {}
 	# logger.debug(deleted_file_service_key)
 
-	search = [r"system:has url matching regex https://kemono.su"]
+	search = hydrus_query
+	# search = [r"system:has url matching regex https://kemono.su"]
 	# search = [
 	# 	r"system:hash is 77c8f33f9acb7acddf54b00e4ce8d6e57058b87dcb1751498800a792bfa11819"
 	# ]  # test
@@ -123,7 +125,7 @@ def run(
 	anchors_str = ",\n\t".join(f"('{a}')" for a in anchors)
 	anchor_query_pth = Path("./anchor_query.tmp")
 	with anchor_query_pth.open("w") as fp:
-		fp.write(f"insert or ignore into archive (entry) values{anchors_str};")
+		fp.write(f"insert or ignore into archive (entry) values\n\t{anchors_str};")
 
 	logger.success("wrote final query to ./anchor_query.tmp")
 
