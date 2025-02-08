@@ -42,4 +42,4 @@ to
 
 Some creators will upload files with the same filename, which will result in conflicting anchors and will skip said files with the same filename on the same post. 
 
-The upside with this is that you can more consistently create anchors. The downside is that (I've been told) imports might not be correctly ordered for that post. Honestly, I'm not too sure how import ordering works to be honest.
+The upside with this is that you can more consistently create anchors. The downside is that (I've been told) imports might not be correctly ordered for that post. Honestly, I'm not too sure how import ordering works.
