@@ -1,0 +1,6 @@
+[hydrus]
+key = "your_key_here"
+host = "http://127.0.0.1:45869"
+
+[hydownloader]
+database_path = "your_hydownloader_path"

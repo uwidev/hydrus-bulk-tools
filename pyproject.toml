@@ -1,0 +1,20 @@
+[project]
+name = "hydrus-bulk-tools"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "dghs-imgutils>=0.9.4",
+    "hydrus-api>=5.1.1",
+    "loguru>=0.7.3",
+    "matplotlib>=3.10.0",
+    "onnxruntime-gpu>=1.20.1",
+    "typer-slim>=0.15.1",
+]
+
+[tool.uv]
+override-dependencies = ["opencv-python ; python_version < '0'"]
+
+[tool.ruff.format]
+indent-style = "tab"
